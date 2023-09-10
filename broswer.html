@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>HTML to Object Conversion</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      h1 {
+        color: #333;
+      }
+      textarea {
+        width: 100%;
+        height: 200px;
+        margin-bottom: 10px;
+      }
+      button {
+        background-color: #0074d9;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      pre {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border: 1px solid #ccc;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>HTML to Object Conversion</h1>
+    <textarea id="htmlInput" placeholder="Enter HTML here"></textarea>
+    <button id="convertButton">Convert</button>
+    <pre id="output"></pre>
+
+    <script>
+      function htmlToObject(html) {
+        const parseStyles = (styleString) => {
+          const styles = {};
+          styleString.split(";").forEach((style) => {
+            const [key, value] = style.split(":").map((s) => s.trim());
+            if (key && value) {
+              styles[key] = value;
+            }
+          });
+          return styles;
+        };
+
+        const traverse = (node) => {
+          let currentNode = {};
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            currentNode = {
+              tag: node.tagName.toLowerCase(),
+              style: parseStyles(node.getAttribute("style") || ""),
+            };
+
+            if (!currentNode.children) {
+              currentNode.children = [];
+            }
+
+            for (const childNode of node.childNodes) {
+              const child = traverse(childNode);
+              if (child) {
+                currentNode.children.push(child);
+              }
+            }
+          } else if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent.trim();
+            if (text !== "") {
+              currentNode.text = text;
+            }
+          } else if (node.nodeType === Node.COMMENT_NODE) {
+            // Ignore comments
+          } else {
+            // Handle other node types as needed
+            currentNode = {
+              type:
+                node.nodeType === Node.CDATA_SECTION_NODE ? "CDATA" : "UNKNOWN",
+              value: node.nodeValue,
+            };
+          }
+          return currentNode;
+        };
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const body = doc.body;
+        const result = traverse(body);
+
+        return result;
+      }
+
+      document
+        .getElementById("convertButton")
+        .addEventListener("click", function () {
+          const htmlInput = document.getElementById("htmlInput").value;
+          const result = htmlToObject(htmlInput);
+          document.getElementById("output").textContent = JSON.stringify(
+            result,
+            null,
+            2
+          );
+        });
+    </script>
+  </body>
+</html>
